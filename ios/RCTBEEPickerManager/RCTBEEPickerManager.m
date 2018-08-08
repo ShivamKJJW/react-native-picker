@@ -13,6 +13,7 @@
 @interface RCTBEEPickerManager()
 
 @property(nonatomic,strong)BzwPicker *pick;
+@property(nonatomic,strong)UIView *pickerView;
 @property(nonatomic,assign)float height;
 @property(nonatomic,weak)UIWindow * window;
 
@@ -65,9 +66,9 @@ RCT_EXPORT_METHOD(_init:(NSDictionary *)indic){
 
     [self.window.subviews enumerateObjectsUsingBlock:^(__kindof UIView * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
 
-        if ([obj isKindOfClass:[BzwPicker class]]) {
+        if ([obj isEqual:self.pickerView]) {
             dispatch_async(dispatch_get_main_queue(), ^{
-
+                
                 [obj removeFromSuperview];
             });
         }
@@ -82,18 +83,16 @@ RCT_EXPORT_METHOD(_init:(NSDictionary *)indic){
     
     self.pick=[[BzwPicker alloc]initWithFrame:CGRectMake(0, SCREEN_HEIGHT, SCREEN_WIDTH, self.height) dic:dataDic leftStr:pickerCancelBtnText centerStr:pickerTitleText rightStr:pickerConfirmBtnText topbgColor:pickerToolBarBg bottombgColor:pickerBg leftbtnbgColor:pickerCancelBtnColor rightbtnbgColor:pickerConfirmBtnColor centerbtnColor:pickerTitleColor selectValueArry:selectArry weightArry:weightArry pickerToolBarFontSize:pickerToolBarFontSize pickerFontSize:pickerFontSize pickerFontColor:pickerFontColor  pickerRowHeight: pickerRowHeight pickerFontFamily:pickerFontFamily];
     
+    __weak typeof(self) weakSelf = self;
     _pick.bolock=^(NSDictionary *backinfoArry){
-
         dispatch_async(dispatch_get_main_queue(), ^{
-
-            [self.bridge.eventDispatcher sendAppEventWithName:@"pickerEvent" body:backinfoArry];
+            [weakSelf.bridge.eventDispatcher sendAppEventWithName:@"pickerEvent" body:backinfoArry];
         });
     };
 
-    dispatch_async(dispatch_get_main_queue(), ^{
-
-        [self.window addSubview:_pick];
-    });
+    self.pickerView = [UIView.alloc initWithFrame:self.window.bounds];
+    self.pickerView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.5];
+    [self.pickerView addSubview:_pick];
 
 }
 
@@ -102,7 +101,7 @@ RCT_EXPORT_METHOD(show){
 
         dispatch_async(dispatch_get_main_queue(), ^{
             [UIView animateWithDuration:.3 animations:^{
-
+                [self.window addSubview:self.pickerView];
                 [_pick setFrame:CGRectMake(0, SCREEN_HEIGHT-self.height, SCREEN_WIDTH, self.height)];
 
             }];
@@ -116,13 +115,11 @@ RCT_EXPORT_METHOD(hide){
         dispatch_async(dispatch_get_main_queue(), ^{
             [UIView animateWithDuration:.3 animations:^{
                 [_pick setFrame:CGRectMake(0, SCREEN_HEIGHT, SCREEN_WIDTH, self.height)];
+            } completion:^(BOOL finished) {
+                [self.pickerView removeFromSuperview];
             }];
         });
-    }
-
-    self.pick.hidden=YES;
-
-    return;
+    }return;
 }
 
 RCT_EXPORT_METHOD(select: (NSArray*)data){
